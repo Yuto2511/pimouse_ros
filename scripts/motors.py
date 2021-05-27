@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-#encoding utf8
+#encoding: utf8
 import sys, rospy, math
 from pimouse_ros.msg import MotorFreqs
 from geometry_msgs.msg import Twist
+from std_srvs.srv import Trigger, TriggerResponse
+from pimouse_ros.srv import TimedMotion
 
 class Motor():
     #インスタンス作成時に呼び出される
@@ -16,6 +18,11 @@ class Motor():
         #トピック名、トピックの型、起動するコールバック関数
         self.sub_raw = rospy.Subscriber('motor_raw', MotorFreqs, self.callback_raw_freq)
         self.sub_cmd_vel = rospy.Subscriber('cmd_vel', Twist, self.callback_cmd_vel)
+        #サービス名、型、コールバック関数を引数とする
+        self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
+        self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
+        #
+        self.srv_tm = rospy.Service('timed_motion', TimedMotion, self.callback_tm)
         #last_timeにcmd_velのコールバック関数が呼ばれた時の時刻
         self.last_time = rospy.Time.now()
         #cmd_velの値が反映されているかのフラグ
@@ -69,6 +76,32 @@ class Motor():
         self.using_cmd_vel = True
         #時刻の更新
         self.last_time = rospy.Time.now()
+
+    def onoff_response(self,onoff):
+        d = TriggerResponse()
+        d.success = self.set_power(onoff)
+        d.message = "ON" if self.is_on else "OFF"
+        return d
+
+    def callback_on(self,message):  return self.onoff_response(True)
+    def callback_off(self,message): return self.onoff_response(False)
+
+    def callback_tm(self,message):
+        if not self.is_on:
+            rospy.logerr("not enpowered")
+            return False
+
+        dev = "/dev/rtmotor0"
+        try:
+            with open(dev,'w') as f:
+                f.write("%d %d %d\n" %
+                    (message.left_hz,message.right_hz,message.duration_ms))
+        except:
+            rospy.logerr("cannot write to " + dev)
+            return False
+
+        return True
+
 
 if __name__ == '__main__':
     #ノードの初期化、インスタンス作成
