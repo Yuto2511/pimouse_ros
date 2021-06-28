@@ -5,6 +5,7 @@
 import rospy, unittest, rostest
 import rosnode
 import time
+from std_msgs.msg import UInt16
 
 #classを作る クラスは関数や変数をまとめたもの(設計図)でこれ自体で実行されない
 #BuzzerTestというクラスの作成 unittestというテストフレームワークを使用
@@ -19,6 +20,16 @@ class BuzzerTest(unittest.TestCase):
         #assertInはunittest内にあるモジュール
         #nodesにbuzzerが存在しているかを確認 確認できなかった場合「node does not exist」と表示
         self.assertIn('/buzzer',nodes,"node does not exist")
+
+    def test_put_value(self):
+        pub = rospy.Publisher('/buzzer', UInt16)
+        for i in range(10):
+            pub.publish(1234)
+            time.sleep(0.1)
+
+        with open("/dev/rtbuzzer0","r") as f:
+            data = f.readline()
+            self.assertEqual(data,"1234\n","value dose not written to rtbuzzer0")
 
 #このif文がないとimportしたモジュールやパッケージが勝手に実行されてしまう
 #仮にimport time とした場合 timeの__name__は__time__になる
