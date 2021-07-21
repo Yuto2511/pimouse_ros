@@ -23,31 +23,7 @@ def write_freq( hz=0 ):
 def recv_buzzer(data):
     write_freq(data.data)
 
-def exec_music(goal):
-    #結果として返すデータ
-    r = MusicResult()
-    #途中経過として返すデータ
-    fb = MusicFeadback()
-
-    for i, f in enumerate(goal.freqs):
-        fb.remaining_steps = len(goal.freqs) - i
-        music.publish_feedback(fb)
-
-        #中断があった時の処理
-        if music.is_preempt_requested():
-            #周波数を0
-            write_freq(0)
-            r.finished = False
-            #set_preemptedを通してexec_musicを終了
-            music.set_preempted(r)
-            return
-        
-        write_freq(f)
-        rospy.sleep(1.0 if i >= len(goal.durations) else goal.durations[i])
-
-    #アクション終了時の処理
-    r.finished = True
-    music.set_succeeded(r)
+def exec_music(goal): pass
 
 if __name__ == '__main__':
     #初期化しROSにノードを追加する
