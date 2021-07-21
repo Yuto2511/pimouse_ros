@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #encoding: utf8
+#ラズパイマウス側のブザーは鳴らなかったが一応動く
 import rospy
 import rospy, actionlib
 from std_msgs.msg import UInt16
